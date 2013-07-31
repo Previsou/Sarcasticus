@@ -118,7 +118,8 @@ class Sarcalingua(object):
             summary2 += "Accuracy :"+str(accuracy)+"\n\n"
             print summary2
     
-
+#-----------------------------------------------------------------------
+#-----------------------------------------------------------------------
 
 class HashSarca(Sarcalingua):
     
@@ -128,7 +129,7 @@ class HashSarca(Sarcalingua):
         self.classifier = model
         self.outEncoder = LabelEncoder()
         self.drop_outs = set((   u"#sarcasm", u"#sarcastic", u"#ironic", u"#irony",
-                    u"#sarcasme", u"#sarcastique", u"#ironie", u"ironique",
+                    u"#sarcasme", u"#sarcastique", u"#ironie", u"#ironique",
                     u"uncyclopedia", u"wikipedia"))
         
     def extractFeatures(self, clean_text):

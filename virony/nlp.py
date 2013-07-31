@@ -13,7 +13,7 @@
         toNgram: convert a sequence into n-gram sequence
         upToNgram: same as toNgram but for multiple arities
         sanitize: clean a text, assuming it is plain text.
-        buildTF: build a term frequency matrix given a corpus
+        buildTF: compute unigram frequencies of a corpus.
 """
 
 import re
@@ -33,7 +33,16 @@ _text_tag = re.compile(r"<(p|h[1-6]).*?>(.+?)</\1>", re.UNICODE+re.I+re.DOTALL)
 _tag_cleaner = re.compile("<.+?>", re.UNICODE)
         
 def sanitize(raw_text, HTML=False):
-        
+    """
+    Clean a text: remove trailing spaces, try to resolve encoding errors and deal with HTML markup.
+    
+    Args:
+        str:: raw_text
+        boolean::HTML: if True, HTML markup is removed
+    Return:
+        Unicode:: sanitized text
+    """
+    
     if HTML:
         clean = ""
         for match in _text_tag.finditer(raw_text):
@@ -91,7 +100,6 @@ def upToNgram(sequence, n, same_size=False):
 
 
 token_pattern = u"|".join([re.escape(_smiley) for _smiley in load("wordlist/emoticon")]) #EMOTICON
-#token_pattern += u"|(?:\w\.)+"  # ACRONYM  \> useless, acronym are almost nvere written this way
 token_pattern += u"|mr\.|mrs\.|inc\.|ltd\.|prof\.|gen\."  # ABBREVIATIONS
 token_pattern += u"|(?<![0-9])[.](?![0-9])" 
 token_pattern += u"|".join([re.escape(_punkt) for _punkt in load("wordlist/punctuation")]) # PUNCTUATION
@@ -108,7 +116,7 @@ def tokenize(raw_text, sentence=True):
     Hand-made text tokenizer. Take into account emoticon and special
     punctuation patterns that serves as features for further analysis.
     
-    Perform first sentence tokenization (if sentence is set to True) then custom woord tokenization.
+    Perform sentence tokenization first (if sentence is set to True) then custom word tokenization.
     """
     if sentence:
         sentences = []
@@ -128,28 +136,34 @@ def tokenize(raw_text, sentence=True):
 
 def parse(text):
     """
-    Tokenizes, tags a text and returns result in a pandas DataFrame.
+    Tokenize a text and return result in a pandas DataFrame.
     
     Args:
         text:   raw text
         
     Return:
-        DataFrame: 2-columns (word, pos (if pos==True), 2-level index (sent_id, token_id)
+        DataFrame: 2-level index (sent_id, token_id)
     """
-    tokens = [DataFrame(x, columns=["word"]) for x in tokenize(text)]
+    tokens = [DataFrame(x, columns=["word"]) for x in tokenize(text,sentence=True)]
 
     for t in tokens:
         t.index.name = "token_id"
-
-    try:
-        return concat(tokens, keys=range(len(tokens)), names=["sent_id", "token_id"])
-    except:
-        return None
+        
+    return concat(tokens, keys=range(len(tokens)), names=["sent_id", "token_id"])
         
 #-----------------------------------------------------------------------
 #-----------------------------------------------------------------------
         
 def buildTF(data, n_jobs):
+    """
+    Compute term frequencies, given a corpus.
+    
+    Args:
+        Iter::data: inerable of text
+        Int::n_jobs: number of processors to use
+    Return:
+        Counter:: term frequencies
+    """
     
     def occurences(text):
         temp = Counter()

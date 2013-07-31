@@ -1,10 +1,9 @@
 """
     Module: irony.data.analyzer
     Author: Lubin Maxime <maxime@soft.ics.keio.ac.jp>
-    Date: 2013-05-13
+    Date: 2013-07-22
     This module is part of the code I wrote for my master research project at Keio University (Japan).
     
-    DEPRECATED DOCUMENTATION
 
     This module provides basic feature analysis.
     All functions in this module uses Pandas DataFrame, features are assumed to
@@ -12,11 +11,17 @@
     
     
     Export:
-        analyze1D: analysis of 1 feature (coverage, box plot)
-        analyze2D: analyze 1 feature against another (correlation, box-plot)
+        analyze1D: analysis of 1 feature (coverage, box plot).
+        getFeatureDataFrame: extract linguistically-grounded featurse from a given dataset.
+        scatterPlot
+        parallelCoordinates: another plot
+        KS_test
+        Welch_test
+        correlation
+        mean_intervals
 """
 
-#######   MIGHT BE PROBLEMS WITH SUBPLOTS (if yes, pass ax objects)
+#######   MIGHT BE PROBLEMATIC WITH SUBPLOTS (if yes, pass ax objects)
 
 from __init__ import load
 
@@ -30,7 +35,10 @@ from scipy import stats
 #               Utility function
 
 def getFeatureDataFrame(dataset_name):
-
+    """
+    Extract linguistically-grounded featurse from a given dataset.
+    """
+    
     features = [ "capitalized", "looong", "emoticon", "human",
             "society", "slang", "polarity"]
     stats = ["mean", "std"]
@@ -47,7 +55,6 @@ def getFeatureDataFrame(dataset_name):
 #-----------------------------------------------------------------------
 #-----------------------------------------------------------------------
 #               Feature graphs
-
 
 def analyze1D(dataset, column_label="irony", out="DISPLAY"):
     """
@@ -91,6 +98,14 @@ def analyze1D(dataset, column_label="irony", out="DISPLAY"):
             print(u"Cannot make "+feature+" kde plot")
         
 def scatterPlot(dataset, out="DISPLAY"):
+    """
+    Perform a scatter plot of dataset.
+    
+    Args:
+        DataFrame:: dataset
+        str::out: path to save the plot.
+    """
+    
     graph = scatter_matrix(dataset)
     if out=='DISPLAY':
         plt.show()
@@ -100,6 +115,15 @@ def scatterPlot(dataset, out="DISPLAY"):
     return graph
 
 def parallelCoordinates(dataset, column_label="irony", out="DISPLAY"):
+        """
+    Perform a parallel coordinate plot of dataset.
+    
+    Args:
+        DataFrame:: dataset
+        str::column_label: column containing sample labels
+        str::out: path to save the plot.
+    """
+    
     graph =  parallel_coordinates(dataset, column_label, alpha=0.5)
     if out=='DISPLAY':
         plt.show()
@@ -113,7 +137,13 @@ def parallelCoordinates(dataset, column_label="irony", out="DISPLAY"):
 #           Statistical tests on features
 
 def KS_test(dataset, column_label="irony"):
+    """
+    2-sample Kolmogorov-smirnov test.
     
+    Args:
+        DataFrame::dataset
+        str::column_label: column containing smaple labels
+    """
     groups = {label:g for label, g in dataset.groupby(column_label)}
     key0, key1 = groups.keys()[:2]
     results = {}
@@ -128,7 +158,13 @@ def KS_test(dataset, column_label="irony"):
     return results
         
 def Welch_test(dataset, column_label="irony"):
+    """
+    Welch (Student's t-test with unequal variance) test.
     
+    Args:
+        DataFrame::dataset
+        str::column_label: column containing smaple labels
+    """
     groups = {label:g for label, g in dataset.groupby(column_label)}
     key0, key1 = groups.keys()[:2]
     results = {}
@@ -142,14 +178,31 @@ def Welch_test(dataset, column_label="irony"):
     return results
 
 def correlation(dataset, column_label="irony"):
+    """
+    Compute correlation between featurs and text label.
     
+    Args:
+        DataFrame::dataset
+        str::column_label
+    """
     corrs = {"global":dataset.corr()}
     for name, group in dataset.groupby(column_label):
         corrs[column_label+"_"+str(name)] = group.corr()
     return corrs
                 
 def mean_intervals(dataset, column_label="irony", alpha=0.05):
+    """ Confidence confidence intervals for the mean of a bunch of samples
+    (1 for each different label).
     
+    Args:
+        DataFrame:: dataset
+        str::column_label: cloumn containing sample labels
+        float::alpha: first order risk
+        
+    Return:
+        DataFrame
+    """
+        
     intervals = []
     for feature in dataset.columns:
         if feature!=column_label:
